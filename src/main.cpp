@@ -6,6 +6,7 @@
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
+#include <cstdlib>
 #include <vector>
 #include <iostream>
 #include <random>
@@ -32,6 +33,7 @@ bool iniciarSimulacao(SDL_Window **janela, SDL_Renderer **renderizador, vector<B
 void atualizarSimulacao(SDL_Window **janela, SDL_Renderer **renderizador, vector<Bola> *vetorBolas, const int quant_bolas, const double dt, const int tam_x, const int tam_y, const int r_bola);
 void desenharBola(SDL_Renderer *renderizador, const Bola *bola, const int r_bola);
 void atualizarBolas(vector<Bola> *bolas, const int quant_bolas, const double dt, const int tam_x, const int tam_y, const int r_bola);
+void calculaColisaoEntreBolas(Bola *bola1, Bola *bola2, double nx, double ny);
 
 int main(int argc, char* argv[]){
     int quant_bolas = QUANT_BOLAS; //quantidade de bolinhas a serem geradas
@@ -190,5 +192,31 @@ void atualizarBolas(vector<Bola> *bolas, const int quant_bolas, const double dt,
         if(y<=r_bola || y>=tam_y-r_bola){ //colisão com uma parede vertical
             bolas->at(i).vy *= -1;
         }
+        for(int j=i+1; j<quant_bolas; j++){ //percorre todas as bolas sucessivas verificando se há colisão
+            double dis_x = bolas->at(i).x - bolas->at(j).x;
+            double dis_y = (bolas->at(i).y - bolas->at(j).y);
+            double dis = sqrt(dis_x*dis_x + dis_y*dis_y);
+            if(dis<=2*r_bola){ //detecta colisão com outra bola
+                calculaColisaoEntreBolas(&bolas->at(i), &bolas->at(j), dis_x, dis_y);
+            }
+        }
     }
 }
+
+void calculaColisaoEntreBolas(Bola *bola1, Bola *bola2, double nx, double ny){
+    double vcmx = (bola1->m*bola1->vx + bola2->m*bola2->vx) / (bola1->m + bola2->m);
+    double vcmy = (bola1->m*bola1->vy + bola2->m*bola2->vy) / (bola1->m + bola2->m);
+    nx /= sqrt(nx*nx + ny*ny);
+    ny /= sqrt(nx*nx + ny*ny);
+    double vcmn = vcmx*nx + vcmy*ny;
+    double v1n = bola1->vx*nx + bola1->vy*ny;
+    double v2n = bola2->vx*nx + bola2->vy*ny;
+    double deltaV1 = 2*(vcmn - v1n);
+    double deltaV2 = 2*(vcmn - v2n);
+    bola1->vx += deltaV1*nx;
+    bola1->vy += deltaV1*ny;
+    bola2->vx += deltaV2*nx;
+    bola2->vy += deltaV2*ny;
+    
+}
+
