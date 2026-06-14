@@ -225,7 +225,7 @@ void atualizarBolas(vector<Bola> *bolas, const int quant_bolas, const double dt,
         if(x<r_bola || x>tam_x-r_bola){ //colisão com uma parede vertical
             bolas->at(i).vx *= -1;
             if(bolas->at(i).x < r_bola/2.0){ //verificação para evitar bola dentro da parede
-                bolas->at(i).x = r_bola/2.0; //retira a bola de dentro da paredde
+                bolas->at(i).x = r_bola/2.0; //retira a bola de dentro da parede
             }
             if(bolas->at(i).x > tam_x - r_bola/2.0){ 
                 bolas->at(i).x = tam_x - r_bola/2.0;
@@ -299,4 +299,3 @@ void calculaColisaoEntreBolas(Bola *bola1, Bola *bola2, double nx, double ny){
     bola2->vx += deltaV2*nx;
     bola2->vy += deltaV2*ny;
 }
-

@@ -1,3 +1,3 @@
 # simulador-de-colisoes-cpp
-Simulador de colisões do trabalho extra do Barreto
+APS Simulador de colisões de Física I do professor Barreto
 
