@@ -20,7 +20,7 @@
 #define V_MAX 150
 #define M_MIN 1
 #define M_MAX 10
-#define R_BOLA 20 
+#define R_BOLA 20
 
 using namespace std;
 
@@ -183,27 +183,110 @@ void atualizarBolas(vector<Bola> *bolas, const int quant_bolas, const double dt,
         bolas->at(i).x += bolas->at(i).vx*dt;
         bolas->at(i).y += bolas->at(i).vy*dt;
     }
+
     for(int i=0; i<quant_bolas; i++){ //verifica se há colisão
         double x = bolas->at(i).x;
         double y = bolas->at(i).y;
-        if(x<=r_bola || x>=tam_x-r_bola){ //colisão com uma parede horizontal
+        if(x<=r_bola || x>=tam_x-r_bola){ //colisão com uma parede vertical
             bolas->at(i).vx *= -1;
+            if(bolas->at(i).x < r_bola/2.0){ //verificação para evitar bola dentro da parede
+                bolas->at(i).x = r_bola/2.0;
+            }
+            if(bolas->at(i).x > tam_x - r_bola/2.0){
+                bolas->at(i).x = tam_x - r_bola/2.0;
+            }
         }
-        if(y<=r_bola || y>=tam_y-r_bola){ //colisão com uma parede vertical
+        if(y<=r_bola || y>=tam_y-r_bola){ //colisão com uma parede horizontal
             bolas->at(i).vy *= -1;
+            if(bolas->at(i).y < r_bola/2.0){
+                bolas->at(i).y = r_bola/2.0;
+            }
+            if(bolas->at(i).y > tam_y - r_bola/2.0){
+                bolas->at(i).y = tam_y - r_bola/2.0;
+            }
         }
         for(int j=i+1; j<quant_bolas; j++){ //percorre todas as bolas sucessivas verificando se há colisão
             double dis_x = bolas->at(i).x - bolas->at(j).x;
             double dis_y = (bolas->at(i).y - bolas->at(j).y);
             double dis = sqrt(dis_x*dis_x + dis_y*dis_y);
             if(dis<=2*r_bola){ //detecta colisão com outra bola
-                calculaColisaoEntreBolas(&bolas->at(i), &bolas->at(j), dis_x, dis_y);
+                double dif_dis_ok = 2*r_bola - dis; //evita bola dentro da outra
+                bool jaChamou = false; //evita calcular a colisão duplicadamente
+                if(bolas->at(i).x > bolas->at(j).x){ //bola i mais à direita que bola j
+                    bolas->at(i).x += (dif_dis_ok * cos(atan2(dis_y, dis_x)))/2;
+                    bolas->at(j).x -= (dif_dis_ok * cos(atan2(dis_y, dis_x)))/2;
+                    if(bolas->at(i).vx < bolas->at(j).vx){
+                        calculaColisaoEntreBolas(&bolas->at(i), &bolas->at(j), dis_x, dis_y);
+                        jaChamou = true;
+                    }
+                }
+                else if(bolas->at(i).x < bolas->at(j).x){ //bola i mais à esquerda que bola j
+                    bolas->at(i).x -= (dif_dis_ok * cos(atan2(dis_y, dis_x)))/2;
+                    bolas->at(j).x += (dif_dis_ok * cos(atan2(dis_y, dis_x)))/2;
+                    if(bolas->at(i).vx > bolas->at(j).vx){
+                        calculaColisaoEntreBolas(&bolas->at(i), &bolas->at(j), dis_x, dis_y);
+                        jaChamou = true;
+                    }
+                }
+                if(bolas->at(i).y > bolas->at(j).y){ //bola i mais em cima que bola j
+                    bolas->at(i).y += (dif_dis_ok * sin(atan2(dis_y, dis_x)))/2;
+                    bolas->at(j).y -= (dif_dis_ok * sin(atan2(dis_y, dis_x)))/2;
+                    if(bolas->at(i).vy < bolas->at(j).vy && !jaChamou){
+                        calculaColisaoEntreBolas(&bolas->at(i), &bolas->at(j), dis_x, dis_y);
+                    }
+                }
+                else if(bolas->at(i).y < bolas->at(j).y){ //bola i mais embaixo que bola j
+                    bolas->at(i).y -= (dif_dis_ok * sin(atan2(dis_y, dis_x)))/2;
+                    bolas->at(j).y += (dif_dis_ok * sin(atan2(dis_y, dis_x)))/2;
+                    if(bolas->at(i).vy > bolas->at(j).vy && !jaChamou){
+                        calculaColisaoEntreBolas(&bolas->at(i), &bolas->at(j), dis_x, dis_y);
+                    }
+                }
             }
         }
     }
 }
 
 void calculaColisaoEntreBolas(Bola *bola1, Bola *bola2, double nx, double ny){
+    double vcmx = (bola1->m*bola1->vx + bola2->m*bola2->vx) / (bola1->m + bola2->m);
+    double vcmy = (bola1->m*bola1->vy + bola2->m*bola2->vy) / (bola1->m + bola2->m);
+    double modulo_n = sqrt(nx*nx + ny*ny);
+    nx /= modulo_n;
+    ny /= modulo_n;
+    double vcmn = vcmx*nx + vcmy*ny;
+    double v1n = bola1->vx*nx + bola1->vy*ny;
+    double v2n = bola2->vx*nx + bola2->vy*ny;
+    double deltaV1 = 2*(vcmn - v1n);
+    double deltaV2 = 2*(vcmn - v2n);
+    bola1->vx += deltaV1*nx;
+    bola1->vy += deltaV1*ny;
+    bola2->vx += deltaV2*nx;
+    bola2->vy += deltaV2*ny;
+}
+
+/*
+cout << "vcmx: " << vcmx << " vcmy: " << vcmy << " vcmn: " << vcmn << " " << endl;
+cout << "nx: " << nx << " ny: " << ny << endl;
+*/
+
+/*
+    double vcmx = (bola1->m*bola1->vx + bola2->m*bola2->vx) / (bola1->m + bola2->m);
+    double vcmy = (bola1->m*bola1->vy + bola2->m*bola2->vy) / (bola1->m + bola2->m);
+    nx /= sqrt(nx*nx + ny*ny);
+    ny /= sqrt(nx*nx + ny*ny);
+    double ang_n = atan2(ny, nx);
+    double vcmn = vcmx/cos(ang_n);
+    double v1n = bola1->vx/cos(ang_n);
+    double v2n = bola2->vx/cos(ang_n);
+    double deltaV1 = 2*(vcmn - v1n);
+    double deltaV2 = 2*(vcmn - v2n);
+    bola1->vx += deltaV1*cos(ang_n);
+    bola1->vy += deltaV1*sin(ang_n);
+    bola2->vx += deltaV2*cos(ang_n);
+    bola2->vy += deltaV2*sin(ang_n);
+*/
+
+/*
     double vcmx = (bola1->m*bola1->vx + bola2->m*bola2->vx) / (bola1->m + bola2->m);
     double vcmy = (bola1->m*bola1->vy + bola2->m*bola2->vy) / (bola1->m + bola2->m);
     nx /= sqrt(nx*nx + ny*ny);
@@ -217,6 +300,4 @@ void calculaColisaoEntreBolas(Bola *bola1, Bola *bola2, double nx, double ny){
     bola1->vy += deltaV1*ny;
     bola2->vx += deltaV2*nx;
     bola2->vy += deltaV2*ny;
-    
-}
-
+*/

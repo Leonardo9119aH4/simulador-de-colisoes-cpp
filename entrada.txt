@@ -1,8 +1,8 @@
-quant_bolas: 2
+quant_bolas: 5
 dt: 0.01
-tam_x: 450
-tam_y: 450
+tam_x: 600
+tam_y: 600
 v_max: 600
 m_min: 1
 m_max: 1
-r_bola: 40
+r_bola: 20
